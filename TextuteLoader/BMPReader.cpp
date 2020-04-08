@@ -1,8 +1,14 @@
 // Этот загрузчик работает только на ОС windows и не учитывает 
 // 12-байтные заголовки, которые есть, например в OS/2.
 
-// Так же я предполагаю, что ему передаются незакодированные картинки,
-// поэтому я возваращаю ошибку, если кодирование есть.
+// Я также предполагаю, что изображения отправляются незашифрованные,
+// поэтому я не проверяю эту информацию
+
+// This bootloader only works on Windows and does not take into account 
+// the 12-byte headers that are, for example, on OS / 2.
+
+// I also assume that unencrypted images are sent to him, 
+// so I do not check this information
 
 #define _CRT_SECURE_NO_WARNINGS
 
@@ -30,10 +36,10 @@ unsigned int convertUInt32(unsigned char buf[4])
 }
 
 // Возвращает ненулевое значение, если что-то пошло не так
+// Returns a non-zero value if something went wrong
 int readFileHeader(FILE* file, unsigned int* bitmap_offset)
 {
 	unsigned char header[BMP_SIZE_FILE_HEADER];
-
 
 	if (fseek(file, 0, SEEK_SET))
 	{
@@ -58,6 +64,7 @@ int readFileHeader(FILE* file, unsigned int* bitmap_offset)
 	}
 
 	// На ОС Windows размер этого заголовка не менее 40
+	// On Windows, the size of this header is at least 40
 	if (convertUInt32(header) < BMP_SIZE_INFO_HEADER)
 	{
 		return 1;
@@ -83,8 +90,6 @@ int LoadBMP(const char* path, Image* out_img)
 		return 0;
 	}
 
-
-
 	if (fseek(file, BMP_SIZE_FILE_HEADER, SEEK_SET))
 	{
 		fclose(file);
@@ -107,7 +112,6 @@ int LoadBMP(const char* path, Image* out_img)
 			return 0;
 		}
 
-
 		int rgb_size = 3 * x_res;
 		if (rgb_size % 4 != 0)
 		{
@@ -126,14 +130,11 @@ int LoadBMP(const char* path, Image* out_img)
 
 		unsigned char* rgb = (unsigned char*)malloc(rgb_size);
 
-
 		if (rgb == NULL)
 		{
 			fclose(file);
 			return 0;
 		}
-
-		unsigned char* line;
 
 		for (int y = 0; y < y_res; ++y)
 		{
@@ -146,13 +147,10 @@ int LoadBMP(const char* path, Image* out_img)
 				return 0;
 			}
 
-			fread(rgb, rgb_size, 1, file);
-
-			line = out_img->data + x_res * 3 * y;
-
 			for (int x = 0; x < x_res; ++x)
 			{
 				// Индексация такая, поскольку в 24 битном формате каждый пиксель описывается в формате BGR
+				// Indexing is like this, since in 24-bit format, each pixel is described in BGR format
 				out_img->data[x_res * 3 * y + x * 3 + 2] = rgb[numb++];
 				out_img->data[x_res * 3 * y + x * 3 + 1] = rgb[numb++];
 				out_img->data[x_res * 3 * y + x * 3] = rgb[numb++];
